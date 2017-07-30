@@ -2,6 +2,8 @@
 
 This is the Emojify app part of Udacity's Advanced Android Development course Part 2 -- Using Libraries.
 
+Original repo: https://github.com/udacity/AdvancedAndroid_Emojify
+
 This app uses the Google Mobile Vision library for Facial Recognition to take selfies and turn your face into an Emoji based on your facial
 expression.
 
