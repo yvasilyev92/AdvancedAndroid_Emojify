@@ -39,31 +39,27 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.IOException;
 
-//Current missing step:
-//Process the photo to extract classification data.
-//Map that data to a closely matching emoji.
-//Overlay the emoji bitmap over the detected face in the image.
-//we must add emoji bitmap on top of the face and there requires a couple of things:
-//For each face detected: 1) we need to load the appropriate bitmap for a given emoji enum,
-//2) we need to combine the emoji bitmap with the original photo bitmap, placing the emoji in
-//the correct place. 3) we need to load the combined bitmap into the imageview.
-
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
+
 
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_STORAGE_PERMISSION = 1;
 
     private static final String FILE_PROVIDER_AUTHORITY = "com.example.android.fileprovider";
 
-    private ImageView mImageView;
+    @BindView(R.id.image_view) ImageView mImageView;
 
-    private Button mEmojifyButton;
-    private FloatingActionButton mShareFab;
-    private FloatingActionButton mSaveFab;
-    private FloatingActionButton mClearFab;
+    @BindView(R.id.emojify_button) Button mEmojifyButton;
+    @BindView(R.id.share_button) FloatingActionButton mShareFab;
+    @BindView(R.id.save_button) FloatingActionButton mSaveFab;
+    @BindView(R.id.clear_button) FloatingActionButton mClearFab;
 
-    private TextView mTitleTextView;
+    @BindView(R.id.title_text_view) TextView mTitleTextView;
 
     private String mTempPhotoPath;
 
@@ -75,33 +71,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Bind the views
+        ButterKnife.bind(this);
 
-        //Here in onCreate we initialize our views.
-        mImageView = (ImageView) findViewById(R.id.image_view);
-        mEmojifyButton = (Button) findViewById(R.id.emojify_button);
-        mShareFab = (FloatingActionButton) findViewById(R.id.share_button);
-        mSaveFab = (FloatingActionButton) findViewById(R.id.save_button);
-        mClearFab = (FloatingActionButton) findViewById(R.id.clear_button);
-        mTitleTextView = (TextView) findViewById(R.id.title_text_view);
+        // Set up Timber
+        Timber.plant(new Timber.DebugTree());
     }
-
-
-
-
-
-
-
-
 
     /**
      * OnClick method for "Emojify Me!" Button. Launches the camera app.
-     *
-     * @param view The emojify me button.
      */
-    //The emojifyMe method checks for the WRITE_EXTERNAL_STORAGE permission using the
-    //runtime permission model. If the permission is not granted then we request it.
-    //If it is then we launch the camera.
-    public void emojifyMe(View view) {
+    @OnClick(R.id.emojify_button)
+    public void emojifyMe() {
         // Check for the external storage permission
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -117,26 +98,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    //The onRequestPermissionsResult method returns the results of the permission request.
-    //It is a required override method that is called when you request permission to read/write
-    //to external storage. If permission is granted we launch the camera, if not we show a Toast.
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
+                                           @NonNull int[] grantResults) {
         // Called when you request permission to read and write to external storage
         switch (requestCode) {
             case REQUEST_STORAGE_PERMISSION: {
@@ -153,23 +117,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
-
-
-
-
-
     /**
      * Creates a temporary image file and captures a picture to store in it.
      */
-    //The launchCamera method where we use the ACTION_IMAGE_CAMERA native intent
-    //to take a picture using the native camera app. Then we check if there is a native
-    //camera app to handle this intent, if there is then we use the BitmapUtils class
-    //to create a temporary file - this is so the camera knows where to store the image it captures.
-    //Then we use the FILE_PROVIDER_AUTHORITY class to create a temporary Uri for the image file we just created,
-    //and pass it as an extra into the implicit intent. Finally we call startActivityForResult so we can
-    //obtain the result from the camera (i.e whether or not the user captured a photo.)
     private void launchCamera() {
 
         // Create the capture image intent
@@ -206,19 +156,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-
-
-
-
-
-
-
-
-    //Then we define the onActivityResult method which is the callback from the call startActivityForResult method,
-    //and is called once the user returns from the camera app. If the user successfully took a photo the
-    //resultCode would == "RESULT_OK" and we can call processAndSetImage. If not then it means the user
-    //backed out of taking the picture and we should delete the temporary file.
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // If the image capture activity was called and was successful
@@ -232,21 +169,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
-
-
-
-
     /**
      * Method for processing the captured image and setting it to the TextView.
      */
-    //The processAndSetImage method toggles the visibility of the views.
-    //It hides the emojify button and the label textview while
-    //showing our 3 FAB buttons to save,share, clear.
-    //Next we use the BitmapUtils class to resample the picture to use less memory.
-    //Lastly we set the resulting Bitmap to the imageview. Eventually this method will
-    //include the functionality to emojify our picture.
     private void processAndSetImage() {
 
         // Toggle Visibility of the views
@@ -259,29 +184,20 @@ public class MainActivity extends AppCompatActivity {
         // Resample the saved image to fit the ImageView
         mResultsBitmap = BitmapUtils.resamplePic(this, mTempPhotoPath);
 
-        //Detect the faces and overlay the appropriate emoji.
-        mResultsBitmap = Emojifier.detectFacesandOverlay(this, mResultsBitmap);
+
+        // Detect the faces and overlay the appropriate emoji
+        mResultsBitmap = Emojifier.detectFacesandOverlayEmoji(this, mResultsBitmap);
 
         // Set the new bitmap to the ImageView
         mImageView.setImageBitmap(mResultsBitmap);
-
-
     }
-
-
-
-    //methods saveMe,shareMe, and clearMe are the onClick methods for the FAB buttons.
-
 
 
     /**
      * OnClick method for the save button.
-     *
-     * @param view The save button.
      */
-    //saveMe uses the BitmapUtils class to delete the temporary image file and save the
-    //process image file to external storage.
-    public void saveMe(View view) {
+    @OnClick(R.id.save_button)
+    public void saveMe() {
         // Delete the temporary image file
         BitmapUtils.deleteImageFile(this, mTempPhotoPath);
 
@@ -289,20 +205,11 @@ public class MainActivity extends AppCompatActivity {
         BitmapUtils.saveImage(this, mResultsBitmap);
     }
 
-
-
-
-
-
     /**
      * OnClick method for the share button, saves and shares the new bitmap.
-     *
-     * @param view The share button.
      */
-    //shareMe uses the BitmapUtils class to delete the temporary image file,save the
-    //process image file, and use the BitmapUtils.shareImage method to share the image
-    //on social media networks.
-    public void shareMe(View view) {
+    @OnClick(R.id.share_button)
+    public void shareMe() {
         // Delete the temporary image file
         BitmapUtils.deleteImageFile(this, mTempPhotoPath);
 
@@ -313,20 +220,11 @@ public class MainActivity extends AppCompatActivity {
         BitmapUtils.shareImage(this, mTempPhotoPath);
     }
 
-
-
-
-
-
     /**
      * OnClick for the clear button, resets the app to original state.
-     *
-     * @param view The clear button.
      */
-    //clearImage basically resets the app to the initial state by removing the
-    //image in the imageview with setImageResource(0), makes the emojify & labeltextview visible,
-    //and hides the share/save/clear buttons. And deletes the temp image file.
-    public void clearImage(View view) {
+    @OnClick(R.id.clear_button)
+    public void clearImage() {
         // Clear the image and toggle the view visibility
         mImageView.setImageResource(0);
         mEmojifyButton.setVisibility(View.VISIBLE);
